@@ -1,0 +1,6 @@
+@collentra_be_HostAddress = http://localhost:5145
+
+GET {{collentra_be_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
