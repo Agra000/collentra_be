@@ -57,5 +57,15 @@ namespace collentra_be.Controllers
             }
         }
 
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginDTO r)
+        {
+            string res = await _authService.Login(r);
+
+            return Ok(new
+            {
+                message = res
+            });
+        }
     }
 }

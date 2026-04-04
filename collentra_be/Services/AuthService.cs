@@ -1,6 +1,8 @@
-﻿using collentra_be.Data;
+﻿using BCrypt.Net;
+using collentra_be.Data;
 using collentra_be.Interface;
 using collentra_be.Model;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using tiketin_b.DTO;
 
@@ -42,6 +44,32 @@ namespace collentra_be.Services
             catch 
             {
                 return false;
+            }
+        }
+
+        public async Task<string> Login(LoginDTO r) 
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.email == r.email);
+
+                if (user == null)
+                {
+                    return "Email is not registered yet !!";
+                }
+                
+                bool isPwValid = BCrypt.Net.BCrypt.Verify(r.password, user.password);
+
+                if (!isPwValid)
+                {
+                    return "Wrong Password !!";
+                }
+
+                return "Login Successfully";
+            }
+            catch (Exception ex)
+            {
+                return $"{ex}";
             }
         }
 
