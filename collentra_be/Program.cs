@@ -51,6 +51,9 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// buat allow cors ke fe
+app.UseCors("AllowReactApp");
+
 // Masih setup JWT
 app.UseAuthentication();
 
