@@ -26,7 +26,13 @@ namespace collentra_be.Controllers
 
                 if (!validationResult.IsValid)
                 {
-                    return BadRequest(validationResult.Errors);
+                    var firstError = validationResult.Errors.FirstOrDefault()?.ErrorMessage ?? "Validation failed";
+
+                    return BadRequest(new
+                    {
+                        status = false,
+                        message = firstError
+                    });
                 }
 
                 bool res = await _authService.Register(r);
@@ -58,14 +64,26 @@ namespace collentra_be.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginDTO r)
+        public async Task<object> Login(LoginDTO r)
         {
-            string res = await _authService.Login(r);
+            var res = await _authService.Login(r);
 
-            return Ok(new
+            if (res == "Email is not registered yet !!" || res == "Wrong Password !!")
             {
-                message = res
-            });
+                return Unauthorized(new
+                {
+                    status = false,
+                    message = res
+                });
+            } 
+            else 
+            {
+                return new
+                {
+                    status = true,
+                    token = res
+                };
+            }
         }
     }
 }

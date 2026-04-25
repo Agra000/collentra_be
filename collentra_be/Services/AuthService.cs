@@ -1,9 +1,15 @@
-﻿using BCrypt.Net;
+﻿using Azure;
+using Azure.Core;
+using BCrypt.Net;
 using collentra_be.Data;
 using collentra_be.Interface;
 using collentra_be.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using tiketin_b.DTO;
 
 namespace collentra_be.Services
@@ -63,14 +69,48 @@ namespace collentra_be.Services
                 if (!isPwValid)
                 {
                     return "Wrong Password !!";
-                }
+                } 
 
-                return "Login Successfully";
+                var tokenString = GenerateJwtToken(user.email, user.username, user.Role);
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = false,
+                    SameSite = SameSiteMode.Lax,
+                    Path = "/",
+                    Expires = DateTime.Now.AddDays(1)
+                };
+                //Response.Cookies.Append("token", tokenString, cookieOptions);
+
+                return tokenString;
             }
             catch (Exception ex)
             {
                 return $"{ex}";
             }
+        }
+
+        public string GenerateJwtToken(string email, string name, string role)
+        {
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Name, name),
+                new Claim(ClaimTypes.Email, email),
+                new Claim("Role", role)
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+                issuer: _config["Jwt:Issuer"],
+                audience: _config["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.Now.AddDays(1),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
     }
