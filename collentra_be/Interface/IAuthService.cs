@@ -1,12 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using tiketin_b.DTO;
+﻿using collentra_be.DTO.Request;
+using collentra_be.DTO.Response;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 
 namespace collentra_be.Interface
 {
     public interface IAuthService
     {
-        Task<bool> IsEmailUnique(string email);
-        Task<bool> Register(RegistDTO request);
-        Task<string> Login(LoginDTO request);
+        Task<ResultMessageResponse> Register(RegistDTO r);
+        Task<ResultMessageResponse> Login(LoginDTO r);
     }
 }

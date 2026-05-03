@@ -1,8 +1,6 @@
-﻿using Azure.Core;
+﻿using collentra_be.DTO.Request;
 using collentra_be.Interface;
-using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using tiketin_b.DTO;
 
 namespace collentra_be.Controllers
 {
@@ -18,49 +16,24 @@ namespace collentra_be.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegistDTO r, [FromServices] IValidator<RegistDTO> validator)
+        public async Task<IActionResult> Register(RegistDTO r)
         {
-            try
+            var res = await _authService.Register(r);
+
+            if (!res.Status)
             {
-                var validationResult = await validator.ValidateAsync(r);
-
-                if (!validationResult.IsValid)
+                return BadRequest(new
                 {
-                    var firstError = validationResult.Errors.FirstOrDefault()?.ErrorMessage ?? "Validation failed";
-
-                    return BadRequest(new
-                    {
-                        status = false,
-                        message = firstError
-                    });
-                }
-
-                bool res = await _authService.Register(r);
-
-                if (!res)
-                {
-                    return BadRequest(new
-                    {
-                        status = false,
-                        message = "Registration Failed. Try Again"
-                    });
-                }
-
-                return Ok(new
-                {
-                    status = true,
-                    message = "Registration Successfully"
+                    status = res.Status,
+                    message = res.Message
                 });
             }
-            catch (Exception ex)
+
+            return Ok(new
             {
-                return StatusCode(500, new
-                {
-                    status = false,
-                    message = "There are something wrong on databases",
-                    error = ex.Message
-                });
-            }
+                status = res.Status,
+                message = res.Message
+            });
         }
 
         [HttpPost("login")]
@@ -68,20 +41,20 @@ namespace collentra_be.Controllers
         {
             var res = await _authService.Login(r);
 
-            if (res == "Email is not registered yet !!" || res == "Wrong Password !!")
+            if (!res.Status)
             {
                 return Unauthorized(new
                 {
-                    status = false,
-                    message = res
+                    status = res.Status,
+                    message = res.Message
                 });
             } 
             else 
             {
                 return new
                 {
-                    status = true,
-                    token = res
+                    status = res.Status,
+                    token = res.Message
                 };
             }
         }

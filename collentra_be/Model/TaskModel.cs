@@ -11,11 +11,25 @@ namespace collentra_be.Model
         public Guid GroupId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
-        public int ProgressPercent { get; set; }
+        public Guid AssigneeId { get; set; }
         public string Status { get; set; }
-        public ICollection<TaskAssignmentModel> Assignments { get; set; }
+        public string Priority { get; set; }
+        public DateTime DueDate { get; set; }
+        public DateTime? CompletedAt { get; set; }
+        public decimal? EstimatedHours { get; set; }
+        public decimal? ActualHours { get; set; }
+        public int? SortOrder { get; set; }
 
-        public DateTime? created_at { get; set; }
-        public DateTime? updated_at { get; set; }
+        public Guid CreatedBy { get; set; }
+        public Guid? UpdatedBy { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+
+
+        [ForeignKey("AssigneeId")]
+        public UserModel Users { get; set; }
+
+        [ForeignKey("GroupId")]
+        public GroupModel Group { get; set; }
     }
 }

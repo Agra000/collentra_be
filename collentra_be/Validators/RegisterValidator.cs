@@ -1,12 +1,12 @@
-﻿using collentra_be.Interface;
+﻿using collentra_be.DTO.Request;
+using collentra_be.Interface;
 using FluentValidation;
-using tiketin_b.DTO;
 
 namespace tiketin_b.Validators
 {
     public class RegisterValidator : AbstractValidator<RegistDTO>
     {
-        public RegisterValidator(IAuthService authService) 
+        public RegisterValidator() 
         {
             RuleFor(x => x.username)
                 .NotEmpty().WithMessage("Username must be filled")
@@ -14,8 +14,7 @@ namespace tiketin_b.Validators
                 .MaximumLength(10).WithMessage("Username at must be 10 maximum letter");
 
             RuleFor(x => x.email)
-                .NotEmpty().WithMessage("Email must be filled")
-                .MustAsync(async (e, _) => await authService.IsEmailUnique(e)).WithMessage("Email has been Registed");
+                .NotEmpty().WithMessage("Email must be filled");
 
             RuleFor(x => x.password)
                 .NotEmpty().WithMessage("Password must be filled")

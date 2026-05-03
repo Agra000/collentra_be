@@ -14,9 +14,9 @@ namespace collentra_be.Model
         public Guid UserId { get; set; }
         public UserModel User { get; set; }
         public string Role { get; set; }
-        public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
-
-        public DateTime? created_at { get; set; }
-        public DateTime? updated_at { get; set; }
+        public bool isLeaving { get; set; } = false;
+        public DateTime JoinedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public Guid? UpdatedBy { get; set; }
     }
 }

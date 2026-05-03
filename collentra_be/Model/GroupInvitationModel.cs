@@ -7,13 +7,21 @@ namespace collentra_be.Model
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-         public Guid Id { get; set; }
+        public Guid Id { get; set; }
         public Guid GroupId { get; set; }
-        public string Code { get; set; }
+        public Guid InvitedByUserId { get; set; }
+        public string Email { get; set; }
+        public string Token { get; set; }
         public DateTime ExpiresAt { get; set; }
-        public bool IsUsed { get; set; }
+        public string Status { get; set; }
 
-        public DateTime? created_at { get; set; }
-        public DateTime? updated_at { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+
+        [ForeignKey("InvitedByUserId")]
+        public UserModel Users { get; set; }
+
+        [ForeignKey("GroupId")]
+        public GroupModel Groups { get; set; }
     }
 }

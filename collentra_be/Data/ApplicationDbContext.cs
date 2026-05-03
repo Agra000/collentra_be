@@ -12,9 +12,7 @@ namespace collentra_be.Data
         public DbSet<UserModel> Users { get; set; }
         public DbSet<GroupModel> Groups { get; set; }
         public DbSet<GroupMemberModel> GroupMembers { get; set; }
-        public DbSet<GroupInvitationModel> GroupInvites { get; set; }
+        public DbSet<GroupInvitationModel> GroupInvitations { get; set; }
         public DbSet<TaskModel> Tasks { get; set; }
-        public DbSet<TaskAssignmentModel> TasksAssignments { get; set; }
-
     }
 }
