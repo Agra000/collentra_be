@@ -78,8 +78,17 @@ namespace collentra_be.Services
         {
             try
             {
-                var user = await isEmailRegistered(r.email);
+                var googleResult = await checkReCaptcha(r.tokenCaptcha);
+                if (googleResult == null || !googleResult.Success)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "Captcha is not valid or already expired !."
+                    };
+                }
 
+                var user = await isEmailRegistered(r.email);
                 if (user != null) 
                 {
                     return new ResultMessageResponse
@@ -90,7 +99,6 @@ namespace collentra_be.Services
                 }
 
                 var validationResult = await _registValidator.ValidateAsync(r);
-
                 if (!validationResult.IsValid)
                 {
                     var firstError = validationResult.Errors.FirstOrDefault()?.ErrorMessage ?? "Validation failed";
@@ -99,17 +107,6 @@ namespace collentra_be.Services
                     {
                         Status = false,
                         Message = firstError
-                    };
-                }
-
-                var googleResult = await checkReCaptcha(r.tokenCaptcha);
-
-                if (googleResult == null || !googleResult.Success)
-                {
-                    return new ResultMessageResponse
-                    {
-                        Status = false,
-                        Message = "Captcha is not valid or already expired !."
                     };
                 }
 
