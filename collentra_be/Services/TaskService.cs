@@ -18,6 +18,44 @@ namespace collentra_be.Services
             _config = config;
         }
 
+        public async Task<GetHomeResponse> getHomeInformation(Guid userId)
+        {
+            try
+            {
+                var groupCount = await _context.GroupMembers
+                    .Where(x => x.UserId == userId
+                    && !x.isLeaving)
+                    .CountAsync();
+
+                var taskCompleted = await _context.Tasks
+                    .Where(x => x.AssigneeId == userId
+                    && x.Status == "Done")
+                    .CountAsync();
+
+                var taskRemaining = await _context.Tasks
+                    .Where(x => x.AssigneeId == userId
+                    && x.Status != "Done")
+                    .CountAsync();
+
+                return new GetHomeResponse
+                {
+                    status = true,
+                    groupCount = groupCount,
+                    taskCompleted = taskCompleted,
+                    taskRemaining = taskRemaining,
+                    teamPerformance = 0
+                };
+            }
+            catch (Exception ex) 
+            {
+                return new GetHomeResponse
+                {
+                    status = false,
+                    message = $"Server Error. Please Try Again !"
+                };
+            }
+        }
+
         public async Task<ResultMessageResponse> AddNewTask(Guid userId, TaskRequest req)
         {
             try
@@ -53,8 +91,7 @@ namespace collentra_be.Services
                 var checkTask = await _context.Tasks
                     .Where(x => x.GroupId == req.GroupId
                     && x.AssigneeId == req.AssigneeId
-                    && x.Title == req.Title
-                    && x.Description == req.Description)
+                    && x.Title == req.Title)
                     .FirstOrDefaultAsync();
 
                 if (checkTask != null)

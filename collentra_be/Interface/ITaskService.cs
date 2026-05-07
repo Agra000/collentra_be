@@ -8,5 +8,6 @@ namespace collentra_be.Interface
     public interface ITaskService
     {
         Task<ResultMessageResponse> AddNewTask(Guid userId, TaskRequest req);
+        Task<GetHomeResponse> getHomeInformation(Guid userId);
     }
 }

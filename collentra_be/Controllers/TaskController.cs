@@ -1,4 +1,5 @@
 ﻿using collentra_be.DTO.Request;
+using collentra_be.DTO.Response;
 using collentra_be.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,32 @@ namespace collentra_be.Controllers
         public TaskController(ITaskService taskService)
         {
             _taskService = taskService;
+        }
+
+        [HttpGet("getHomeInformation")]
+        public async Task<GetHomeResponse> getHomeInformation([FromQuery] Guid userId)
+        {
+            var res = await _taskService.getHomeInformation(userId);
+
+            if (!res.status)
+            {
+                return new GetHomeResponse
+                {
+                    status = res.status,
+                    message = res.message
+                };
+            }
+            else
+            {
+                return new GetHomeResponse
+                {
+                    status = res.status,
+                    groupCount = res.groupCount,
+                    taskRemaining = res.taskRemaining,
+                    taskCompleted = res.taskCompleted,
+                    teamPerformance = res.teamPerformance
+                };
+            }
         }
 
         [HttpPost("create-task")]

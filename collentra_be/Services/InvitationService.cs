@@ -3,6 +3,7 @@ using collentra_be.DTO.Request;
 using collentra_be.DTO.Response;
 using collentra_be.Interface;
 using collentra_be.Model;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
@@ -53,6 +54,7 @@ namespace collentra_be.Services
                         && x.isLeaving == false)
                         .FirstOrDefaultAsync();
         }
+
         private async Task<GroupModel?> getGroupById(Guid groupId, Guid userId)
         {
             return await _context.Groups
@@ -62,25 +64,70 @@ namespace collentra_be.Services
                         .FirstOrDefaultAsync();
         }
 
-        public async Task<List<GroupInvitationModel>> GetAllInvitation(Guid userId)
+        public async Task<List<UserModel>> SearchUsers(string email)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(email) || email.Length < 2)
+                    return new List<UserModel>();
+
+                return await _context.Users
+                    .Where(u => u.email.Contains(email))
+                    .Take(10)
+                    .Select(u => new UserModel
+                    {
+                        user_id = u.user_id,
+                        email = u.email
+                    })
+                    .ToListAsync();
+            }
+            catch (Exception ex) 
+            {
+                return new List<UserModel>();
+            }
+        }
+
+        public async Task<List<object>> GetAllInvitation(Guid userId)
         {
             try
             {
                 var getUserEmail = await _context.Users
-                    .Where(x => x.user_id == userId
-                        && x.isActive)
+                    .Where(x => x.user_id == userId && x.isActive)
                     .Select(e => e.email)
-                    .FirstOrDefaultAsync() ?? throw new Exception();
-                
-                return await _context.GroupInvitations
-                        .Where(x => x.Email == getUserEmail
-                        && x.Status == "Pending"
-                        && x.ExpiresAt > DateTime.Now)
-                        .ToListAsync();
+                    .FirstOrDefaultAsync();
+
+                if (string.IsNullOrEmpty(getUserEmail))
+                {
+                    return new List<object>();
+                }
+
+                var invitations = await _context.GroupInvitations
+                    .Where(x => x.Email == getUserEmail
+                            && x.Status == "Pending"
+                            && x.ExpiresAt > DateTime.Now)
+                    .Select(x => new
+                    {
+                        id = x.Id,
+                        type = "friend_request",
+                        title = "Group Invitation",
+                        message = $"You have been invited to join {x.Groups.Name}",
+                        groupId = x.GroupId,
+                        groupName = x.Groups.Name,
+                        groupDescription = x.Groups.Description,
+                        status = x.Status,
+                        timestamp = x.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                        read = false,
+                        inviterName = x.Users.username,
+                        inviterEmail = x.Users.email,
+                        token = x.Token
+                    })
+                    .ToListAsync();
+
+                return invitations.Cast<object>().ToList();
             }
             catch (Exception ex)
             {
-                return new List<GroupInvitationModel>();
+                return new List<object>();
             }
         }
 
@@ -169,7 +216,7 @@ namespace collentra_be.Services
                 return new ResultMessageResponse
                 {
                     Status = true,
-                    Message = "Invite Successfully"
+                    Message = "Successfully invited!"
                 };
             }
             catch (Exception ex) 

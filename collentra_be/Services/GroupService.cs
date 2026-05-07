@@ -111,6 +111,7 @@ namespace collentra_be.Services
                     groupId = g.Id,
                     groupName = g.Name,
                     description = g.Description,
+                    groupOwnerId = g.OwnerId,
 
                     members = _context.GroupMembers
                         .Where(gm => !gm.isLeaving && gm.GroupId == groupId)

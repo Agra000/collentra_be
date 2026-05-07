@@ -1,10 +1,12 @@
 ﻿using Azure.Core;
 using collentra_be.DTO.Request;
 using collentra_be.Interface;
+using collentra_be.Model;
 using collentra_be.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace collentra_be.Controllers
@@ -40,8 +42,25 @@ namespace collentra_be.Controllers
             });
         }
 
-        [HttpPost("send-invite/{groupId}/{invitedByUserId}")]
-        public async Task<IActionResult> SendInvitation(Guid groupId, Guid invitedByUserId, [FromBody] string targetEmailUser)
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchUsers([FromQuery] string email)
+        {
+            var res = await _inviteService.SearchUsers(email);
+
+            if (res == null || !res.Any())
+            {
+                return Ok(new { data = new List<object>(), message = "Groups not found" });
+            }
+
+            return Ok(new
+            {
+                data = res,
+                message = "Success"
+            });
+        }
+
+        [HttpPost("send-invite/{groupId}")]
+        public async Task<IActionResult> SendInvitation(Guid groupId, [FromQuery] Guid invitedByUserId, [FromBody] string targetEmailUser)
         {
             var res = await _inviteService.SendInvitationAsync(groupId, invitedByUserId, targetEmailUser);
 
@@ -86,8 +105,6 @@ namespace collentra_be.Controllers
             }
         }
 
-        //    // GET api/projects/{projectId}/invitations
-        //    // List semua undangan (Owner / Admin)
         //    [HttpGet]
         //    public async Task<IActionResult> GetInvitations(Guid projectId)
         //    {
@@ -100,8 +117,6 @@ namespace collentra_be.Controllers
         //        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         //    }
 
-        //    // GET api/projects/{projectId}/members
-        //    // List member aktif (semua member bisa lihat)
         //    [HttpGet("/api/projects/{projectId}/members")]
         //    public async Task<IActionResult> GetMembers(Guid projectId)
         //    {
@@ -114,8 +129,6 @@ namespace collentra_be.Controllers
         //        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         //    }
 
-        //    // DELETE api/projects/{projectId}/members/{targetUserId}
-        //    // Kick member
         //    [HttpDelete("/api/projects/{projectId}/members/{targetUserId:guid}")]
         //    public async Task<IActionResult> RemoveMember(Guid projectId, Guid targetUserId)
         //    {
@@ -128,8 +141,6 @@ namespace collentra_be.Controllers
         //        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         //    }
 
-        //    // PATCH api/projects/{projectId}/members/{targetUserId}/role
-        //    // Update role (Owner only)
         //    [HttpPatch("/api/projects/{projectId}/members/{targetUserId:guid}/role")]
         //    public async Task<IActionResult> UpdateRole(
         //        Guid projectId, Guid targetUserId, [FromBody] UpdateRoleRequest request)
@@ -144,33 +155,4 @@ namespace collentra_be.Controllers
         //        catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         //    }
     }
-
-    //// Endpoint accept/decline — route berbeda, tidak perlu projectId
-    //[ApiController]
-    //[Route("api/invitations")]
-    //[Authorize]
-    //public class InvitationAcceptController(IInvitationService invitationService) : ControllerBase
-    //{
-    //    private Guid CurrentUserId =>
-    //        Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-    //    // POST api/invitations/accept
-    //    [HttpPost("accept")]
-    //    public async Task<IActionResult> Accept([FromBody] AcceptInvitationRequest request)
-    //    {
-    //        var result = await invitationService.AcceptInvitationAsync(request.Token, CurrentUserId);
-    //        return result.Success ? Ok(result) : BadRequest(result);
-    //    }
-
-    //    // POST api/invitations/decline
-    //    [HttpPost("decline")]
-    //    public async Task<IActionResult> Decline([FromBody] AcceptInvitationRequest request)
-    //    {
-    //        var result = await invitationService.DeclineInvitationAsync(request.Token, CurrentUserId);
-    //        return result.Success ? Ok(result) : BadRequest(result);
-    //    }
-    //}
-
-    //public record UpdateRoleRequest(string Role);
-
 }
