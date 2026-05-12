@@ -18,6 +18,33 @@ namespace collentra_be.Services
             _config = config;
         }
 
+        public async Task<List<GetTaskDeadlineResponse>> getTaskDeadline(Guid asigneeId)
+        {
+            try
+            {
+                return await _context.Tasks
+                    .Where(a => a.AssigneeId == asigneeId)
+                    .Select(a => new GetTaskDeadlineResponse
+                    {
+                        Id = a.Id,
+                        GroupName = a.Group.Name,
+                        GroupId = a.GroupId,
+                        Title = a.Title,
+                        Description = a.Description,
+                        AssigneeId = asigneeId,
+                        stats = a.Status,
+                        Priority = a.Priority,
+                        DueDate = a.DueDate,
+                        CompletedAt = a.CompletedAt,
+                    })
+                    .ToListAsync();
+            }
+            catch (Exception)
+            {
+                return new List<GetTaskDeadlineResponse>();
+            }
+        }
+
         public async Task<GetHomeResponse> getHomeInformation(Guid userId)
         {
             try

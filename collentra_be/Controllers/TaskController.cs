@@ -18,6 +18,23 @@ namespace collentra_be.Controllers
             _taskService = taskService;
         }
 
+        [HttpGet("getTaskDeadline")]
+        public async Task<IActionResult> getTaskDeadline([FromQuery] Guid assigneeId)
+        {
+            var res = await _taskService.getTaskDeadline(assigneeId);
+
+            if (res == null)
+            {
+                return BadRequest(new { data = new List<object>(), message = "Tasks not found" });
+            }
+
+            return Ok(new
+            {
+                data = res,
+                message = "Success"
+            });
+        }
+
         [HttpGet("getHomeInformation")]
         public async Task<GetHomeResponse> getHomeInformation([FromQuery] Guid userId)
         {
