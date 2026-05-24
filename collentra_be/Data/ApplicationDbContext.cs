@@ -14,5 +14,6 @@ namespace collentra_be.Data
         public DbSet<GroupMemberModel> GroupMembers { get; set; }
         public DbSet<GroupInvitationModel> GroupInvitations { get; set; }
         public DbSet<TaskModel> Tasks { get; set; }
+        public DbSet<NotificationModel> Notifications { get; set; }
     }
 }

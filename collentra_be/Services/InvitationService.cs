@@ -116,14 +116,58 @@ namespace collentra_be.Services
                         groupDescription = x.Groups.Description,
                         status = x.Status,
                         timestamp = x.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
-                        read = false,
                         inviterName = x.Users.username,
                         inviterEmail = x.Users.email,
-                        token = x.Token
+                        token = x.Token,
+                        createdAt = x.CreatedAt,
+                        x.ExpiresAt
                     })
+                    .OrderByDescending(x => x.createdAt)
                     .ToListAsync();
 
-                return invitations.Cast<object>().ToList();
+                var result = invitations.Select(x =>
+                {
+                    TimeSpan expiredCountdown = x.ExpiresAt - DateTime.UtcNow;
+
+                    if (expiredCountdown < TimeSpan.Zero)
+                    {
+                        expiredCountdown = TimeSpan.Zero;
+                    }
+
+                    string countdownText;
+                    if (expiredCountdown.TotalSeconds == 0)
+                    {
+                        countdownText = "Expired";
+                    }
+                    else if (expiredCountdown.Days >= 1)
+                    {
+                        countdownText = $"{expiredCountdown.Days} {(expiredCountdown.Days == 1 ? "day" : "days")} remaining";
+                    }
+                    else
+                    {
+                        countdownText = $"{expiredCountdown.ToString(@"hh\:mm\:ss")} remaining";
+                    }
+
+                    return new
+                    {
+                        id = x.id,
+                        type = "friend_request",
+                        title = "Group Invitation",
+                        message = $"You have been invited to join {x.groupName}",
+                        groupId = x.groupId,
+                        groupName = x.groupName,
+                        groupDescription = x.groupDescription,
+                        status = x.status,
+                        timestamp = x.createdAt.ToString("yyyy-MM-dd HH:mm"),
+                        inviterName = x.inviterName,
+                        inviterEmail = x.inviterEmail,
+                        token = x.token,
+                        createdAt = x.createdAt,
+                        expiredCountdown = countdownText
+                    };
+                }).ToList();
+
+                return result.Cast<object>().ToList();
             }
             catch (Exception ex)
             {
@@ -289,6 +333,19 @@ namespace collentra_be.Services
 
                     _context.GroupMembers.Add(newMember);
                     msg = "Successfully Joined Group !";
+               
+                    var notifToAdmin = new NotificationModel
+                    { 
+                        GroupId = invitationStillActive.GroupId,
+                        Title = "New Member has arrived !",
+                        Description = $"{userTarget.username} joined your group !",
+                        TargetId = invitationStillActive.InvitedByUserId,
+                        isOpen = false,
+                        CreatedBy = userTarget.user_id,
+                        CreatedAt = DateTime.Now
+                    };
+
+                    _context.Notifications.Add(notifToAdmin);
                 }
                 else
                 {
@@ -296,6 +353,7 @@ namespace collentra_be.Services
                     invitationStillActive.UpdatedAt = DateTime.Now;
                     msg = "Invitation rejected successfully !";
                 }
+
 
                 await _context.SaveChangesAsync();
 

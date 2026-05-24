@@ -28,7 +28,7 @@ namespace collentra_be.Controllers
 
             if (res == null || !res.Any())
             {
-                return BadRequest(new { data = new List<object>(), message = "Groups not found" });
+                return Ok(new { data = new List<object>(), message = "Groups not found" });
             }
 
             return Ok(new

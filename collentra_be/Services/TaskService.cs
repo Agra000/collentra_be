@@ -31,7 +31,7 @@ namespace collentra_be.Services
                         GroupId = a.GroupId,
                         Title = a.Title,
                         Description = a.Description,
-                        AssigneeId = asigneeId,
+                        AssigneeId = a.AssigneeId,
                         stats = a.Status,
                         Priority = a.Priority,
                         DueDate = a.DueDate,

@@ -3,26 +3,27 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace collentra_be.Model
 {
-    public class GroupInvitationModel
+    public class NotificationModel
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid Id { get; set; }
         public Guid GroupId { get; set; }
-        public Guid InvitedByUserId { get; set; }
-        public string Email { get; set; }
-        public string Token { get; set; }
-        public DateTime ExpiresAt { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
+        public Guid TargetId { get; set; }
         public bool isOpen { get; set; }
-        public string Status { get; set; }
 
+        public Guid CreatedBy { get; set; }
+        public Guid? UpdatedBy { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
-        [ForeignKey("InvitedByUserId")]
+
+        [ForeignKey("TargetId")]
         public UserModel Users { get; set; }
 
         [ForeignKey("GroupId")]
-        public GroupModel Groups { get; set; }
+        public GroupModel Group { get; set; }
     }
 }
