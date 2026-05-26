@@ -78,10 +78,10 @@ namespace collentra_be.Controllers
             }
         }
 
-        [HttpDelete("{groupId}/{userId}")]
-        public async Task<IActionResult> RemoveGroup(Guid groupId, string userId)
+        [HttpPost("kick-member/{groupId}")]
+        public async Task<IActionResult> UpdateGroup(Guid groupId, [FromBody] KickMemberRequest req)
         {
-            var res = await _groupService.RemoveGroup(groupId, userId);
+            var res = await _groupService.KickMember(groupId, req);
 
             if (!res.Status)
             {
@@ -105,6 +105,29 @@ namespace collentra_be.Controllers
         public async Task<IActionResult> UpdateGroup(Guid groupId, [FromBody] GroupRequest req)
         {
             var res = await _groupService.UpdateGroup(groupId, req);
+
+            if (!res.Status)
+            {
+                return BadRequest(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+            else
+            {
+                return Ok(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+        }
+
+        [HttpDelete("{groupId}/{userId}")]
+        public async Task<IActionResult> RemoveGroup(Guid groupId, string userId)
+        {
+            var res = await _groupService.RemoveGroup(groupId, userId);
 
             if (!res.Status)
             {

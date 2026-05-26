@@ -79,7 +79,7 @@ namespace collentra_be.Services
             try
             {
                 return await _context.GroupMembers
-                    .Where(gm => gm.UserId == userId)
+                    .Where(gm => gm.UserId == userId && !gm.isLeaving)
                     .Select(gm => new GetAllGroupResponse
                     {
                         groupId = gm.Group.Id,
@@ -90,7 +90,7 @@ namespace collentra_be.Services
                             .Select(u => u.username)
                             .FirstOrDefault() ?? "No Owner",
 
-                        MemberCount = _context.GroupMembers.Count(x => x.GroupId == gm.GroupId),
+                        MemberCount = _context.GroupMembers.Count(x => x.GroupId == gm.GroupId && !x.isLeaving),
                         taskTotal = _context.Tasks.Count(x => x.GroupId == gm.GroupId),
                         taskComplete = _context.Tasks.Count(x => x.GroupId == gm.GroupId && x.Status == "Done")
                     })
@@ -120,6 +120,7 @@ namespace collentra_be.Services
                         {
                             id = gm.UserId,
                             name = gm.User.username,
+                            emailMember = gm.User.email,
                             role = gm.Role,
                             tasksCompleted = _context.Tasks.Count(t => t.GroupId == groupId && t.AssigneeId == gm.UserId && t.Status == "Done"),
                             progress = 0
@@ -153,7 +154,6 @@ namespace collentra_be.Services
             try
             {
                 var user = await checkUserId(req.userId);
-
                 if (user == null)
                 {
                     return new ResultMessageResponse
@@ -164,7 +164,6 @@ namespace collentra_be.Services
                 }
 
                 DateTime created_at = DateTime.Now;
-
                 var data = new GroupModel
                 {
                     Name = req.Name,
@@ -194,7 +193,6 @@ namespace collentra_be.Services
                 }
 
                 bool addMemberRes = await addMember(newGroupId.Id, user.user_id);
-
                 if (!addMemberRes)
                 {
                     return new ResultMessageResponse
@@ -220,13 +218,92 @@ namespace collentra_be.Services
             }
         }
 
+        public async Task<ResultMessageResponse> KickMember(Guid groupId, KickMemberRequest req)
+        {
+            try
+            {
+                var group = await getGroupById(groupId);
+                if (group == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "Group Not Found !!"
+                    };
+                }
+
+                var user = await checkUserId(req.kickedMemberId);
+                if (user == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "User Not Found !!"
+                    };
+                }
+
+                if (user.user_id == req.leaderId)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "You can't kick yourself !!"
+                    };
+                }
+
+                var isAdmin = await checkAdminRole(groupId, req.leaderId);
+                if (isAdmin == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "You are not admin on this group !!"
+                    };
+                }
+
+                var isMemberInGroup = await _context.GroupMembers
+                                    .Where(x => x.GroupId == groupId
+                                    && x.UserId == user.user_id
+                                    && x.Role == "Member"
+                                    && x.isLeaving == false)
+                                    .FirstOrDefaultAsync();
+
+                if (isMemberInGroup == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "This person are not member on this group !!"
+                    };
+                }
+
+                isMemberInGroup.isLeaving = true;
+                isMemberInGroup.UpdatedBy = req.leaderId;
+                isMemberInGroup.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                return new ResultMessageResponse
+                {
+                    Status = true,
+                    Message = $"{user.email} kicked Successfully!"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResultMessageResponse
+                {
+                    Status = false,
+                    Message = $"Server Error. Please Try Again ! {ex}"
+                };
+            }
+        }
+
         public async Task<ResultMessageResponse> RemoveGroup(Guid groupId, string userId)
         {
             try
             {
-                var user = await checkUserId(userId);
                 var deletedGroup = await getGroupById(groupId);
-
                 if (deletedGroup == null)
                 {
                     return new ResultMessageResponse
@@ -235,7 +312,9 @@ namespace collentra_be.Services
                         Message = "Group Not Found !!"
                     };
                 }
-                else if (user == null)
+
+                var user = await checkUserId(userId);
+                if (user == null)
                 {
                     return new ResultMessageResponse
                     {
@@ -243,21 +322,29 @@ namespace collentra_be.Services
                         Message = "User Not Found !!"
                     };
                 }
-                else 
+
+                var isAdmin = await checkAdminRole(groupId, user.user_id);
+                if (isAdmin == null)
                 {
-                    deletedGroup.isDeleted = true;
-                    deletedGroup.UpdatedBy = user.user_id; 
-                    deletedGroup.IsArchived = false;
-                    deletedGroup.UpdatedAt = DateTime.Now;
-
-                    await _context.SaveChangesAsync();
-
                     return new ResultMessageResponse
                     {
-                        Status = true,
-                        Message = "Group Deleted Successfully!"
+                        Status = false,
+                        Message = "You are not admin on this group !!"
                     };
                 }
+
+                deletedGroup.isDeleted = true;
+                deletedGroup.UpdatedBy = user.user_id; 
+                deletedGroup.IsArchived = false;
+                deletedGroup.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                return new ResultMessageResponse
+                {
+                    Status = true,
+                    Message = "Group Deleted Successfully!"
+                };
             }
             catch (Exception ex)
             {
@@ -273,9 +360,7 @@ namespace collentra_be.Services
         {
             try
             {
-                var user = await checkUserId(req.userId);
                 var updatedGroup = await getGroupById(groupId);
-
                 if (updatedGroup == null)
                 {
                     return new ResultMessageResponse
@@ -283,8 +368,10 @@ namespace collentra_be.Services
                         Status = false,
                         Message = "Group Not Found !!"
                     };
-                } 
-                else if (user == null)
+                }
+                
+                var user = await checkUserId(req.userId); 
+                if (user == null)
                 {
                     return new ResultMessageResponse
                     {
@@ -292,33 +379,30 @@ namespace collentra_be.Services
                         Message = "User Not Found !!"
                     };
                 }
-                else
+
+                var isAdmin = await checkAdminRole(groupId, user.user_id);
+                if (isAdmin == null)
                 {
-                    var isAdmin = await checkAdminRole(groupId, user.user_id);
-
-                    if (isAdmin == null)
-                    {
-                        return new ResultMessageResponse
-                        {
-                            Status = false,
-                            Message = "You are not admin on this group !!"
-                        };
-                    }
-
-                    updatedGroup.Name = req.Name;
-                    updatedGroup.Description = req.Description;
-                    updatedGroup.IsArchived = req.IsArchived;
-                    updatedGroup.UpdatedBy = user.user_id;
-                    updatedGroup.UpdatedAt = DateTime.Now;
-
-                    await _context.SaveChangesAsync();
-
                     return new ResultMessageResponse
                     {
-                        Status = true,
-                        Message = "Group Updated Successfully!"
+                        Status = false,
+                        Message = "You are not admin on this group !!"
                     };
                 }
+
+                updatedGroup.Name = req.Name;
+                updatedGroup.Description = req.Description;
+                updatedGroup.IsArchived = req.IsArchived;
+                updatedGroup.UpdatedBy = user.user_id;
+                updatedGroup.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                return new ResultMessageResponse
+                {
+                    Status = true,
+                    Message = "Group Updated Successfully!"
+                };
             }
             catch (Exception ex)
             {
