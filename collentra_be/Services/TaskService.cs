@@ -87,6 +87,15 @@ namespace collentra_be.Services
         {
             try
             {
+                if (req.DueDate.Date <= DateTime.Now.Date)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"You can't add task on this deadline !"
+                    };
+                }
+
                 var ChekcOwner = await _context.Groups
                     .Where(x => x.Id == req.GroupId
                     && x.OwnerId == userId)
