@@ -127,7 +127,7 @@ namespace collentra_be.Services
 
                 var result = invitations.Select(x =>
                 {
-                    TimeSpan expiredCountdown = x.ExpiresAt - DateTime.UtcNow;
+                    TimeSpan expiredCountdown = x.ExpiresAt - DateTime.Now;
 
                     if (expiredCountdown < TimeSpan.Zero)
                     {
@@ -250,8 +250,8 @@ namespace collentra_be.Services
                     Email = targetEmailUser,
                     Token = token,
                     Status = "Pending",
-                    ExpiresAt = DateTime.UtcNow.AddDays(7),
-                    CreatedAt = DateTime.UtcNow
+                    ExpiresAt = DateTime.Now.AddDays(7),
+                    CreatedAt = DateTime.Now
                 };
 
                 _context.GroupInvitations.Add(dataInvitation);

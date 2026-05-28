@@ -79,7 +79,7 @@ namespace collentra_be.Controllers
         }
 
         [HttpPost("kick-member/{groupId}")]
-        public async Task<IActionResult> UpdateGroup(Guid groupId, [FromBody] KickMemberRequest req)
+        public async Task<IActionResult> KickMember(Guid groupId, [FromBody] KickMemberRequest req)
         {
             var res = await _groupService.KickMember(groupId, req);
 

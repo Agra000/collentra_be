@@ -4,6 +4,8 @@ using collentra_be.DTO.Response;
 using collentra_be.Interface;
 using collentra_be.Model;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel;
+using System.Text.RegularExpressions;
 
 namespace collentra_be.Services
 {
@@ -16,6 +18,25 @@ namespace collentra_be.Services
         {
             _context = context;
             _config = config;
+        }
+
+        private async Task<GroupMemberModel?> checkAdminRole(Guid groupId, Guid userId)
+        {
+            return await _context.GroupMembers
+                        .Where(x => x.GroupId == groupId
+                        && x.UserId == userId
+                        && x.Role == "Admin"
+                        && !x.isLeaving)
+                        .FirstOrDefaultAsync();
+        }
+
+        private async Task<GroupMemberModel?> findUser(Guid groupId, Guid userId)
+        {
+            return await _context.GroupMembers
+                    .Where(x => x.GroupId == groupId
+                    && x.UserId == userId
+                    && !x.isLeaving)
+                    .FirstOrDefaultAsync();
         }
 
         public async Task<List<GetTaskDeadlineResponse>> getTaskDeadline(Guid asigneeId)
@@ -96,12 +117,18 @@ namespace collentra_be.Services
                     };
                 }
 
-                var ChekcOwner = await _context.Groups
-                    .Where(x => x.Id == req.GroupId
-                    && x.OwnerId == userId)
-                    .FirstOrDefaultAsync();
+                var checkAdmin = await findUser(req.GroupId, userId);
+                if (checkAdmin == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"You are not member on this group !"
+                    };
+                }
 
-                if (ChekcOwner == null) 
+                var isAdmin = await checkAdminRole(req.GroupId, userId);
+                if (isAdmin == null) 
                 {
                     return new ResultMessageResponse
                     {
@@ -110,12 +137,8 @@ namespace collentra_be.Services
                     };
                 }
 
-                var checkUser = await _context.GroupMembers
-                    .Where(x => x.GroupId == req.GroupId
-                    && x.UserId == req.AssigneeId)
-                    .FirstOrDefaultAsync();
-
-                if (checkUser == null)
+                var checkMember = await findUser(req.GroupId, req.AssigneeId);
+                if (checkMember == null)
                 {
                     return new ResultMessageResponse
                     {
@@ -127,7 +150,8 @@ namespace collentra_be.Services
                 var checkTask = await _context.Tasks
                     .Where(x => x.GroupId == req.GroupId
                     && x.AssigneeId == req.AssigneeId
-                    && x.Title == req.Title)
+                    && x.Title == req.Title
+                    && x.Status != "Done")
                     .FirstOrDefaultAsync();
 
                 if (checkTask != null)
@@ -148,7 +172,7 @@ namespace collentra_be.Services
                     Status = req.Status,
                     Priority = req.Priority,
                     DueDate = req.DueDate,
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.Now,
                     CreatedBy = userId
                 };
 
@@ -162,6 +186,115 @@ namespace collentra_be.Services
                 };
             } 
             catch (Exception ex) 
+            {
+                return new ResultMessageResponse
+                {
+                    Status = false,
+                    Message = $"Server Error. Please Try Again !"
+                };
+            }
+        }
+
+        public async Task<GetEditTasksResponse?> GetEditTask(Guid taskId)
+        {
+            try
+            {
+                return await _context.Tasks
+                    .Where(x => x.Id == taskId)
+                    .Select(a => new GetEditTasksResponse
+                    {
+                        GroupId = a.GroupId,
+                        Title = a.Title,
+                        Description = a.Description,
+                        AssigneeId = a.AssigneeId,
+                        AssigneeName = a.Users.username,
+                        Status = a.Status,
+                        Priority = a.Priority,
+                        DueDate = a.DueDate,
+                    })
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception)
+            {
+                return new GetEditTasksResponse();
+            }
+        }
+
+        public async Task<ResultMessageResponse> EditTask(Guid userId, Guid taskId, TaskRequest req)
+        {
+            try
+            {
+                var checkMember = await findUser(req.GroupId, req.AssigneeId);
+                if (checkMember == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"This person is not member on this group !"
+                    };
+                }
+                
+                var checkAdmin = await findUser(req.GroupId, userId);
+                if (checkAdmin == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"You are not member on this group !"
+                    };
+                }
+
+                var isAdmin = await checkAdminRole(req.GroupId, userId);
+                if (isAdmin == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"You are not the owner on this group !"
+                    };
+                }
+
+                var checkTask = await _context.Tasks
+                    .Where(x => x.Id == taskId
+                    && x.AssigneeId == req.AssigneeId
+                    && x.Status != "Done")
+                    .FirstOrDefaultAsync();
+
+                if (checkTask == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"Task not found !"
+                    };
+                }
+
+                if (req.DueDate.Date <= DateTime.Now.Date)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"You can't update task on this deadline !"
+                    };
+                }
+
+                checkTask.Title = req.Title;
+                checkTask.Description = req.Description;
+                checkTask.Status = req.Status;
+                checkTask.Priority = req.Priority;
+                checkTask.DueDate = req.DueDate;
+                checkTask.UpdatedBy = userId;
+                checkTask.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                return new ResultMessageResponse
+                {
+                    Status = true,
+                    Message = $"Successfully Update Task !"
+                };
+            }
+            catch (Exception ex)
             {
                 return new ResultMessageResponse
                 {

@@ -25,7 +25,7 @@ namespace collentra_be.Controllers
 
             if (res == null)
             {
-                return BadRequest(new { data = new List<object>(), message = "Tasks not found" });
+                return Ok(new { data = new List<object>(), message = "Tasks not found" });
             }
 
             return Ok(new
@@ -65,6 +65,46 @@ namespace collentra_be.Controllers
         public async Task<IActionResult> AddNewTask([FromQuery] Guid userId, [FromBody] TaskRequest req)
         {
             var res = await _taskService.AddNewTask(userId, req);
+
+            if (!res.Status)
+            {
+                return BadRequest(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+            else
+            {
+                return Ok(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+        }
+
+        [HttpPut("get-edit")]
+        public async Task<IActionResult> GetEditTask([FromQuery] Guid taskId)
+        {
+            var res = await _taskService.GetEditTask(taskId);
+
+            if (res == null)
+            {
+                return BadRequest(new { data = new List<object>(), message = "Tasks not found" });
+            }
+
+            return Ok(new
+            {
+                data = res,
+                message = "Success"
+            });
+        }
+
+        [HttpPut("edit-task")]
+        public async Task<IActionResult> EditTask([FromQuery] Guid userId, [FromQuery] Guid taskId, [FromBody] TaskRequest req)
+        {
+            var res = await _taskService.EditTask(userId, taskId, req);
 
             if (!res.Status)
             {

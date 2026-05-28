@@ -133,10 +133,18 @@ namespace collentra_be.Services
                             id = t.Id,
                             name = t.Title,
                             assignee = t.Users.username,
+                            assigneeId = t.Users.user_id,
                             status = t.Status.ToLower(),
                             priority = t.Priority,
+                            description = t.Description,
                             dueDate = t.DueDate.ToString("yyyy-MM-dd")
-                        }).ToList(),
+                        })
+                        .OrderBy(t => t.status == "Done" ? 5 :
+                            t.priority == "Critical" ? 1 :
+                            t.priority == "High" ? 2 :
+                            t.priority == "Medium" ? 3 :
+                            t.priority == "Low" ? 4 : 6)
+                        .ToList(),
 
                     taskTotal = _context.Tasks.Count(t => t.GroupId == groupId),
                     taskComplete = _context.Tasks.Count(t => t.GroupId == groupId && t.Status == "Done"),

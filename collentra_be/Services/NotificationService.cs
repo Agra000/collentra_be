@@ -60,14 +60,14 @@ namespace collentra_be.Services
                             && x.ExpiresAt > DateTime.Now)
                     .ExecuteUpdateAsync(setters => setters
                         .SetProperty(n => n.isOpen, true)
-                        .SetProperty(n => n.UpdatedAt, DateTime.UtcNow) 
+                        .SetProperty(n => n.UpdatedAt, DateTime.Now) 
                     );
 
                 var activityRows = await _context.Notifications
                     .Where(x => x.TargetId == userId)
                     .ExecuteUpdateAsync(setters => setters
                         .SetProperty(n => n.isOpen, true)
-                        .SetProperty(n => n.UpdatedAt, DateTime.UtcNow)
+                        .SetProperty(n => n.UpdatedAt, DateTime.Now)
                     );
 
                 return new ResultMessageResponse
