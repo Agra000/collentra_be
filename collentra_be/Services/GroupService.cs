@@ -91,8 +91,11 @@ namespace collentra_be.Services
                             .FirstOrDefault() ?? "No Owner",
 
                         MemberCount = _context.GroupMembers.Count(x => x.GroupId == gm.GroupId && !x.isLeaving),
-                        taskTotal = _context.Tasks.Count(x => x.GroupId == gm.GroupId),
-                        taskComplete = _context.Tasks.Count(x => x.GroupId == gm.GroupId && x.Status == "Done")
+                        taskTotal = _context.Tasks.Count(x => x.GroupId == gm.GroupId
+                                    && !x.isDeleted),
+                        taskComplete = _context.Tasks.Count(x => x.GroupId == gm.GroupId 
+                                    && x.Status == "Done" 
+                                    && !x.isDeleted)
                     })
                     .ToListAsync();
             }
@@ -122,8 +125,13 @@ namespace collentra_be.Services
                             name = gm.User.username,
                             emailMember = gm.User.email,
                             role = gm.Role,
-                            tasksCompleted = _context.Tasks.Count(t => t.GroupId == groupId && t.AssigneeId == gm.UserId && t.Status == "Done"),
-                            progress = 0
+                            tasksCompleted = _context.Tasks.Count(t => t.GroupId == groupId 
+                                            && t.AssigneeId == gm.UserId 
+                                            && t.Status == "Done" 
+                                            && !t.isDeleted),
+                            totalTasks = _context.Tasks.Count(t => t.GroupId == groupId
+                                            && t.AssigneeId == gm.UserId
+                                            && !t.isDeleted)
                         }).ToList(),
 
                     tasks = _context.Tasks
@@ -134,20 +142,24 @@ namespace collentra_be.Services
                             name = t.Title,
                             assignee = t.Users.username,
                             assigneeId = t.Users.user_id,
-                            status = t.Status.ToLower(),
+                            status = t.isDeleted ? "Terminate" : t.Status,
                             priority = t.Priority,
                             description = t.Description,
                             dueDate = t.DueDate.ToString("yyyy-MM-dd")
                         })
                         .OrderBy(t => t.status == "Done" ? 5 :
+                            t.status == "Terminate" ? 6 :
                             t.priority == "Critical" ? 1 :
                             t.priority == "High" ? 2 :
                             t.priority == "Medium" ? 3 :
-                            t.priority == "Low" ? 4 : 6)
+                            t.priority == "Low" ? 4 : 7)
                         .ToList(),
 
-                    taskTotal = _context.Tasks.Count(t => t.GroupId == groupId),
-                    taskComplete = _context.Tasks.Count(t => t.GroupId == groupId && t.Status == "Done"),
+                    taskTotal = _context.Tasks.Count(t => t.GroupId == groupId 
+                        && !t.isDeleted),
+                    taskComplete = _context.Tasks.Count(t => t.GroupId == groupId 
+                        && t.Status == "Done" 
+                        && !t.isDeleted),
                     status = true
                 })
                 .FirstOrDefaultAsync();

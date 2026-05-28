@@ -77,12 +77,14 @@ namespace collentra_be.Services
 
                 var taskCompleted = await _context.Tasks
                     .Where(x => x.AssigneeId == userId
-                    && x.Status == "Done")
+                    && x.Status == "Done"
+                    && !x.isDeleted)
                     .CountAsync();
 
                 var taskRemaining = await _context.Tasks
                     .Where(x => x.AssigneeId == userId
-                    && x.Status != "Done")
+                    && x.Status != "Done"
+                    && !x.isDeleted)
                     .CountAsync();
 
                 return new GetHomeResponse
@@ -151,7 +153,8 @@ namespace collentra_be.Services
                     .Where(x => x.GroupId == req.GroupId
                     && x.AssigneeId == req.AssigneeId
                     && x.Title == req.Title
-                    && x.Status != "Done")
+                    && x.Status != "Done"
+                    && !x.isDeleted)
                     .FirstOrDefaultAsync();
 
                 if (checkTask != null)
@@ -195,12 +198,95 @@ namespace collentra_be.Services
             }
         }
 
+        public async Task<ResultMessageResponse> CompleteTask(TaskStatusRequest req)
+        {
+            try
+            {
+                var task = await _context.Tasks
+                    .Where(x => x.Id == req.taskId
+                    && x.Status != "Done"
+                    && !x.isDeleted)
+                    .FirstOrDefaultAsync();
+
+                if(task == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"Task not Found ! !"
+                    };
+                }
+
+                task.Status = "Done";
+                task.CompletedAt = DateTime.Now;
+                task.UpdatedBy = req.leaderId;
+                task.UpdatedAt = DateTime.Now;
+                
+                await _context.SaveChangesAsync();
+
+                return new ResultMessageResponse
+                {
+                    Status = true,
+                    Message = $"Task Completed successfully !"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResultMessageResponse
+                {
+                    Status = false,
+                    Message = $"Server Error. Please Try Again !"
+                };
+            }
+        }
+        public async Task<ResultMessageResponse> TerminateTask(TaskStatusRequest req)
+        {
+            try
+            {
+                var task = await _context.Tasks
+                    .Where(x => x.Id == req.taskId
+                    && x.Status != "Done"
+                    && !x.isDeleted)
+                    .FirstOrDefaultAsync();
+
+                if (task == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"Task not Found ! !"
+                    };
+                }
+
+                task.isDeleted = true;
+                task.CompletedAt = DateTime.Now;
+                task.UpdatedBy = req.leaderId;
+                task.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                return new ResultMessageResponse
+                {
+                    Status = true,
+                    Message = $"Task Terminated successfully !"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResultMessageResponse
+                {
+                    Status = false,
+                    Message = $"Server Error. Please Try Again !"
+                };
+            }
+        }
+
         public async Task<GetEditTasksResponse?> GetEditTask(Guid taskId)
         {
             try
             {
                 return await _context.Tasks
-                    .Where(x => x.Id == taskId)
+                    .Where(x => x.Id == taskId && !x.isDeleted)
                     .Select(a => new GetEditTasksResponse
                     {
                         GroupId = a.GroupId,
@@ -257,7 +343,8 @@ namespace collentra_be.Services
                 var checkTask = await _context.Tasks
                     .Where(x => x.Id == taskId
                     && x.AssigneeId == req.AssigneeId
-                    && x.Status != "Done")
+                    && x.Status != "Done"
+                    && !x.isDeleted)
                     .FirstOrDefaultAsync();
 
                 if (checkTask == null)

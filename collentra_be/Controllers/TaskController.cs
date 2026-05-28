@@ -84,14 +84,63 @@ namespace collentra_be.Controllers
             }
         }
 
-        [HttpPut("get-edit")]
+        [HttpPost("complete-task")]
+        public async Task<IActionResult> CompleteTask([FromBody] TaskStatusRequest req)
+        {
+            var res = await _taskService.CompleteTask(req);
+
+            if (!res.Status)
+            {
+                return BadRequest(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+            else
+            {
+                return Ok(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+        }
+
+        [HttpPost("terminate-task")]
+        public async Task<IActionResult> TerminateTask([FromBody] TaskStatusRequest req)
+        {
+            var res = await _taskService.TerminateTask(req);
+
+            if (!res.Status)
+            {
+                return BadRequest(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+            else
+            {
+                return Ok(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+        }
+
+        [HttpGet("get-edit")]
         public async Task<IActionResult> GetEditTask([FromQuery] Guid taskId)
         {
             var res = await _taskService.GetEditTask(taskId);
 
             if (res == null)
             {
-                return BadRequest(new { data = new List<object>(), message = "Tasks not found" });
+                return Ok(new { 
+                    data = new List<object>(), 
+                    message = "Tasks not found !" 
+                });
             }
 
             return Ok(new

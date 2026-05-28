@@ -19,6 +19,7 @@ namespace collentra_be.Model
         public decimal? EstimatedHours { get; set; }
         public decimal? ActualHours { get; set; }
         public int? SortOrder { get; set; }
+        public bool isDeleted { get; set; }
 
         public Guid CreatedBy { get; set; }
         public Guid? UpdatedBy { get; set; }
