@@ -30,6 +30,14 @@ namespace collentra_be.Services
                         .FirstOrDefaultAsync();
         }
 
+        private async Task<UserModel?> isUserActive(Guid userId)
+        {
+            return await _context.Users
+                .Where(x => x.user_id == userId
+                && x.isActive)
+                .FirstOrDefaultAsync();
+        }
+
         private async Task<GroupMemberModel?> findUser(Guid groupId, Guid userId)
         {
             return await _context.GroupMembers
@@ -110,6 +118,16 @@ namespace collentra_be.Services
         {
             try
             {
+                var isActive = await isUserActive(req.AssigneeId);
+                if (isActive == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"This user are inactive !"
+                    };
+                }
+
                 if (req.DueDate.Date <= DateTime.Now.Date)
                 {
                     return new ResultMessageResponse
@@ -202,6 +220,16 @@ namespace collentra_be.Services
         {
             try
             {
+                var isActive = await isUserActive(req.leaderId);
+                if (isActive == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"This user are inactive !"
+                    };
+                }
+
                 var task = await _context.Tasks
                     .Where(x => x.Id == req.taskId
                     && x.Status != "Done"
@@ -243,6 +271,16 @@ namespace collentra_be.Services
         {
             try
             {
+                var isActive = await isUserActive(req.leaderId);
+                if (isActive == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"This user are inactive !"
+                    };
+                }
+
                 var task = await _context.Tasks
                     .Where(x => x.Id == req.taskId
                     && x.Status != "Done"
@@ -310,6 +348,16 @@ namespace collentra_be.Services
         {
             try
             {
+                var isActive = await isUserActive(req.AssigneeId);
+                if (isActive == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"This user are inactive !"
+                    };
+                }
+
                 var checkMember = await findUser(req.GroupId, req.AssigneeId);
                 if (checkMember == null)
                 {

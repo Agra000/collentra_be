@@ -233,7 +233,7 @@ namespace collentra_be.Services
                 return new ResultMessageResponse
                 {
                     Status = false,
-                    Message = $"Server Error. Please Try Again ! {ex}"
+                    Message = $"Server Error. Please Try Again !"
                 };
             }
         }
@@ -297,6 +297,19 @@ namespace collentra_be.Services
                     };
                 }
 
+                var notifToMember = new NotificationModel
+                {
+                    GroupId = group.Id,
+                    Title = "You Got Kicked !",
+                    Description = $"You have been kicked from group {group.Name} !",
+                    TargetId = Guid.Parse(req.kickedMemberId),
+                    isOpen = false,
+                    CreatedBy = req.leaderId,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Notifications.Add(notifToMember);
+
                 isMemberInGroup.isLeaving = true;
                 isMemberInGroup.UpdatedBy = req.leaderId;
                 isMemberInGroup.UpdatedAt = DateTime.Now;
@@ -314,7 +327,7 @@ namespace collentra_be.Services
                 return new ResultMessageResponse
                 {
                     Status = false,
-                    Message = $"Server Error. Please Try Again ! {ex}"
+                    Message = $"Server Error. Please Try Again !"
                 };
             }
         }
@@ -371,7 +384,7 @@ namespace collentra_be.Services
                 return new ResultMessageResponse
                 {
                     Status = false,
-                    Message = $"Server Error. Please Try Again ! {ex}"
+                    Message = $"Server Error. Please Try Again !"
                 };
             }
         }
@@ -429,7 +442,7 @@ namespace collentra_be.Services
                 return new ResultMessageResponse
                 {
                     Status = false,
-                    Message = $"Server Error. Please Try Again ! {ex}"
+                    Message = $"Server Error. Please Try Again !"
                 };
             }
         }
