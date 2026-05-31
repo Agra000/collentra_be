@@ -73,10 +73,12 @@ namespace collentra_be.Services
                     .Where(x => x.TargetId == userId && !x.IsDeleted)
                     .Select(x => new GetRatingResponse
                     {
+                        ratingId = x.Id,
                         Rating = x.Rate,
                         Comment = x.Comment,
-                        RaterId = x.CreatedBy,
-                        TimeRated = x.CreatedAt
+                        raterName = x.Rater.username,
+                        raterEmail = x.Rater.email,
+                        TimeRated = x.UpdatedAt == null ? x.CreatedAt : x.UpdatedAt
                     })
                     .ToListAsync();
             }
@@ -156,18 +158,36 @@ namespace collentra_be.Services
                     };
                 }
 
-                var ratingAndComment = new RatingCommentModel 
+                var checkRate = await _context.RatingComments
+                    .Where(x => x.GroupId == group.Id
+                    && x.TargetId == user.user_id
+                    && x.CreatedBy == userId
+                    && !x.IsDeleted)
+                    .FirstOrDefaultAsync();
+                
+                if (checkRate == null)
                 { 
-                    GroupId = group.Id,
-                    Rate = req.Rate,
-                    Comment = req.Comment,
-                    TargetId = req.TargetId,
-                    IsDeleted = false,
-                    CreatedBy = userId,
-                    CreatedAt = DateTime.Now
-                };
+                    var ratingAndComment = new RatingCommentModel 
+                    { 
+                        GroupId = group.Id,
+                        Rate = req.Rate,
+                        Comment = req.Comment,
+                        TargetId = req.TargetId,
+                        IsDeleted = false,
+                        CreatedBy = userId,
+                        CreatedAt = DateTime.Now
+                    };
 
-                _context.RatingComments.Add(ratingAndComment);
+                    _context.RatingComments.Add(ratingAndComment);
+                } 
+                else
+                {
+                    checkRate.Rate = req.Rate;
+                    checkRate.Comment = req.Comment;
+                    checkRate.UpdatedBy = userId;
+                    checkRate.UpdatedAt = DateTime.Now;
+                }
+
                 await _context.SaveChangesAsync();
 
                 return new ResultMessageResponse

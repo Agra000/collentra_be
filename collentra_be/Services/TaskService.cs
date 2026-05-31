@@ -78,6 +78,16 @@ namespace collentra_be.Services
         {
             try
             {
+                var checkUser = await isUserActive(userId);
+                if(checkUser == null)
+                {
+                    return new GetHomeResponse
+                    {
+                        status = false,
+                        message = $"User not Found !"
+                    };
+                }
+
                 var groupCount = await _context.GroupMembers
                     .Where(x => x.UserId == userId
                     && !x.isLeaving)
@@ -101,7 +111,10 @@ namespace collentra_be.Services
                     groupCount = groupCount,
                     taskCompleted = taskCompleted,
                     taskRemaining = taskRemaining,
-                    teamPerformance = 0
+                    teamPerformance = 0,
+                    memberSince = checkUser.CreatedAt,
+                    dob = checkUser.dob,
+                    gender = checkUser.gender
                 };
             }
             catch (Exception ex) 

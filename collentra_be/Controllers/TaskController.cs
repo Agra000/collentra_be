@@ -56,7 +56,10 @@ namespace collentra_be.Controllers
                     groupCount = res.groupCount,
                     taskRemaining = res.taskRemaining,
                     taskCompleted = res.taskCompleted,
-                    teamPerformance = res.teamPerformance
+                    teamPerformance = res.teamPerformance,
+                    memberSince = res.memberSince,
+                    dob = res.dob,
+                    gender = res.gender
                 };
             }
         }

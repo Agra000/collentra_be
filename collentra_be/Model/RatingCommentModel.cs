@@ -20,6 +20,9 @@ namespace collentra_be.Model
         public DateTime? UpdatedAt { get; set; }
 
 
+        [ForeignKey("CreatedBy")]
+        public UserModel Rater { get; set; }
+
         [ForeignKey("TargetId")]
         public UserModel Users { get; set; }
 
