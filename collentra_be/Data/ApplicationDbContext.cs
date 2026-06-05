@@ -16,5 +16,6 @@ namespace collentra_be.Data
         public DbSet<TaskModel> Tasks { get; set; }
         public DbSet<NotificationModel> Notifications { get; set; }
         public DbSet<RatingCommentModel> RatingComments { get; set; }
+        public DbSet<FileUploadModel> FileUpload { get; set; }
     }
 }

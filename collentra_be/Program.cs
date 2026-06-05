@@ -4,6 +4,7 @@ using collentra_be.Services;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using tiketin_b.Validators;
@@ -35,6 +36,7 @@ builder.Services.AddScoped<IInvitationService, InvitationService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IRateCommentService, RateCommentService>();
+builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 //builder.Services.AddScoped<IInvitationService, Invitat>();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterValidator>();
 
@@ -70,6 +72,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// Config buat upload file ke backend
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "Uploads")),
+    RequestPath = "/shared-documents" // Harus sama dengan nama URL di controller
+});
 
 app.UseHttpsRedirection();
 
