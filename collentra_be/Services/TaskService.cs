@@ -52,7 +52,12 @@ namespace collentra_be.Services
             try
             {
                 return await _context.Tasks
-                    .Where(a => a.AssigneeId == asigneeId && !a.isDeleted)
+                    .Where(a => a.AssigneeId == asigneeId 
+                    && !a.isDeleted 
+                    && _context.GroupMembers
+                        .Where(m => m.UserId == asigneeId && !m.isLeaving)
+                        .Select(m => m.GroupId)
+                        .Contains(a.GroupId))
                     .Select(a => new GetTaskDeadlineResponse
                     {
                         Id = a.Id,
@@ -102,7 +107,11 @@ namespace collentra_be.Services
                 var taskRemaining = await _context.Tasks
                     .Where(x => x.AssigneeId == userId
                     && x.Status != "Done"
-                    && !x.isDeleted)
+                    && !x.isDeleted
+                    && _context.GroupMembers
+                        .Where(m => m.UserId == userId && !m.isLeaving)
+                        .Select(m => m.GroupId)
+                        .Contains(x.GroupId))
                     .CountAsync();
 
                 return new GetHomeResponse
