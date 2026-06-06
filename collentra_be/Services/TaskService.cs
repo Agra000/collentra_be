@@ -227,7 +227,7 @@ namespace collentra_be.Services
                 {
                     GroupId = req.GroupId,
                     Title = "New Task Assigned !",
-                    Description = $"You have a new Task from {theUser?.username} on group ({theGroup.Name})!",
+                    Description = $"You have a new Task from {theUser?.email} on group ({theGroup.Name})!",
                     TargetId = task.AssigneeId,
                     isOpen = false,
                     CreatedBy = userId,
