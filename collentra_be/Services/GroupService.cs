@@ -447,5 +447,101 @@ namespace collentra_be.Services
             }
         }
 
+        public async Task<ResultMessageResponse> ChangeAdmin(Guid groupId, KickMemberRequest req)
+        {
+            try
+            {
+                var group = await getGroupById(groupId);
+                if (group == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "Group Not Found !!"
+                    };
+                }
+
+                var user = await checkUserId(req.kickedMemberId);
+                if (user == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "User Not Found !!"
+                    };
+                }
+
+                if (user.user_id == req.leaderId)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "You can't promote yourself !!"
+                    };
+                }
+
+                var isAdmin = await checkAdminRole(groupId, req.leaderId);
+                if (isAdmin == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "You are not admin on this group !!"
+                    };
+                }
+
+                var isMemberInGroup = await _context.GroupMembers
+                                    .Where(x => x.GroupId == group.Id
+                                    && x.UserId == user.user_id
+                                    && x.Role == "Member"
+                                    && x.isLeaving == false)
+                                    .FirstOrDefaultAsync();
+
+                if (isMemberInGroup == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "This person are not member on this group !!"
+                    };
+                }
+
+                var notifToMember = new NotificationModel
+                {
+                    GroupId = group.Id,
+                    Title = "You Got Promote to Admin !",
+                    Description = $"You have been promoted on group {group.Name} !",
+                    TargetId = Guid.Parse(req.kickedMemberId),
+                    isOpen = false,
+                    CreatedBy = req.leaderId,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Notifications.Add(notifToMember);
+
+                isMemberInGroup.Role = "Admin";
+                group.OwnerId = Guid.Parse(req.kickedMemberId);
+                isAdmin.Role = "Member";
+                isMemberInGroup.UpdatedBy = req.leaderId;
+                isMemberInGroup.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                return new ResultMessageResponse
+                {
+                    Status = true,
+                    Message = $"{user.email} Promote Successfully!"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResultMessageResponse
+                {
+                    Status = false,
+                    Message = $"Server Error. Please Try Again !"
+                };
+            }
+        }
+
     }
 }

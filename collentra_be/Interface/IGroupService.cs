@@ -11,5 +11,6 @@ namespace collentra_be.Interface
         Task<ResultMessageResponse> KickMember(Guid groupId, KickMemberRequest req);
         Task<ResultMessageResponse> RemoveGroup(Guid groupId, string userId);
         Task<ResultMessageResponse> UpdateGroup(Guid groupId, GroupRequest req);
+        Task<ResultMessageResponse> ChangeAdmin(Guid groupId, KickMemberRequest req);
     }
 }

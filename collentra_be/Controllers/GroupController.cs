@@ -147,5 +147,28 @@ namespace collentra_be.Controllers
             }
         }
 
+        [HttpPost("promote-member/{groupId}")]
+        public async Task<IActionResult> ChangeAdmin(Guid groupId, [FromBody] KickMemberRequest req)
+        {
+            var res = await _groupService.ChangeAdmin(groupId, req);
+
+            if (!res.Status)
+            {
+                return BadRequest(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+            else
+            {
+                return Ok(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+        }
+
     }
 }
