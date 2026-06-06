@@ -4,6 +4,7 @@
     {
         public Guid GroupId { get; set; }
         public Guid SenderId { get; set; }
+        public Guid TaskId { get; set; }
         public IFormFile File { get; set; }
     }
 }

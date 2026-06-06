@@ -87,33 +87,10 @@ namespace collentra_be.Controllers
             }
         }
 
-        [HttpPost("complete-task")]
-        public async Task<IActionResult> CompleteTask([FromBody] TaskStatusRequest req)
+        [HttpPost("change-status")]
+        public async Task<IActionResult> ChangeTaskStatus([FromBody] TaskStatusRequest req)
         {
-            var res = await _taskService.CompleteTask(req);
-
-            if (!res.Status)
-            {
-                return BadRequest(new
-                {
-                    status = res.Status,
-                    message = res.Message
-                });
-            }
-            else
-            {
-                return Ok(new
-                {
-                    status = res.Status,
-                    message = res.Message
-                });
-            }
-        }
-
-        [HttpPost("terminate-task")]
-        public async Task<IActionResult> TerminateTask([FromBody] TaskStatusRequest req)
-        {
-            var res = await _taskService.TerminateTask(req);
+            var res = await _taskService.ChangeTaskStatus(req);
 
             if (!res.Status)
             {

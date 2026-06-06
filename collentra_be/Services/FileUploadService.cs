@@ -11,10 +11,12 @@ namespace collentra_be.Services
     public class FileUploadService : IFileUploadService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ITaskService _taskService;
 
-        public FileUploadService(ApplicationDbContext context)
+        public FileUploadService(ApplicationDbContext context, ITaskService taskService)
         {
             _context = context;
+            _taskService = taskService;
         }
 
         public async Task<List<FileDownloadResponse>> GetAllDocs([FromQuery] Guid groupId)
@@ -48,6 +50,22 @@ namespace collentra_be.Services
         {
             try
             {
+                var task = await _context.Tasks
+                    .Where(x => x.Id == req.TaskId
+                    && x.GroupId == req.GroupId
+                    && x.Status == "InProgress"
+                    && !x.isDeleted)
+                    .FirstOrDefaultAsync();
+
+                if (task == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"Task not Found ! !"
+                    };
+                }
+
                 var checkUser = await _context.Users
                     .Where(x => x.user_id == req.SenderId
                     && x.isActive)
@@ -105,8 +123,25 @@ namespace collentra_be.Services
                     CreatedAt = DateTime.Now
                 };
 
+                var statusData = new TaskStatusRequest {
+                    groupId = checkMember.GroupId,
+                    leaderId = checkMember.UserId,
+                    statusTask = "In Review",
+                    taskId = task.Id
+                };
+
                 _context.FileUpload.Add(uploadDocument);
                 await _context.SaveChangesAsync();
+
+                var changeStatus = await _taskService.ChangeTaskStatus(statusData);
+                if (!changeStatus.Status)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = changeStatus.Status,
+                        Message = changeStatus.Message
+                    };
+                }
                
                 return new ResultMessageResponse
                 {

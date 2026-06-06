@@ -52,7 +52,7 @@ namespace collentra_be.Services
             try
             {
                 return await _context.Tasks
-                    .Where(a => a.AssigneeId == asigneeId)
+                    .Where(a => a.AssigneeId == asigneeId && !a.isDeleted)
                     .Select(a => new GetTaskDeadlineResponse
                     {
                         Id = a.Id,
@@ -131,6 +131,16 @@ namespace collentra_be.Services
         {
             try
             {
+                var theGroup = await _context.Groups.FirstOrDefaultAsync(x => x.Id == req.GroupId);
+                if (theGroup == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"Group not found !"
+                    };
+                }
+
                 var isActive = await isUserActive(req.AssigneeId);
                 if (isActive == null)
                 {
@@ -197,6 +207,8 @@ namespace collentra_be.Services
                     };
                 }
 
+                var theUser = await _context.Users.FirstOrDefaultAsync(x => x.user_id == userId);
+
                 var task = new TaskModel
                 {
                     GroupId = req.GroupId,
@@ -209,8 +221,20 @@ namespace collentra_be.Services
                     CreatedAt = DateTime.Now,
                     CreatedBy = userId
                 };
-
                 _context.Tasks.Add(task);
+
+                var notifToAdmin = new NotificationModel
+                {
+                    GroupId = req.GroupId,
+                    Title = "New Task Assigned !",
+                    Description = $"You have a new Task from {theUser?.username} on group ({theGroup.Name})!",
+                    TargetId = task.AssigneeId,
+                    isOpen = false,
+                    CreatedBy = userId,
+                    CreatedAt = DateTime.Now
+                };
+                _context.Notifications.Add(notifToAdmin);
+
                 await _context.SaveChangesAsync();
 
                 return new ResultMessageResponse
@@ -229,7 +253,7 @@ namespace collentra_be.Services
             }
         }
 
-        public async Task<ResultMessageResponse> CompleteTask(TaskStatusRequest req)
+        public async Task<ResultMessageResponse> ChangeTaskStatus(TaskStatusRequest req)
         {
             try
             {
@@ -239,63 +263,13 @@ namespace collentra_be.Services
                     return new ResultMessageResponse
                     {
                         Status = false,
-                        Message = $"This user are inactive !"
+                        Message = $"User not Found ! !"
                     };
                 }
 
                 var task = await _context.Tasks
                     .Where(x => x.Id == req.taskId
-                    && x.Status != "Done"
-                    && !x.isDeleted)
-                    .FirstOrDefaultAsync();
-
-                if(task == null)
-                {
-                    return new ResultMessageResponse
-                    {
-                        Status = false,
-                        Message = $"Task not Found ! !"
-                    };
-                }
-
-                task.Status = "Done";
-                task.CompletedAt = DateTime.Now;
-                task.UpdatedBy = req.leaderId;
-                task.UpdatedAt = DateTime.Now;
-                
-                await _context.SaveChangesAsync();
-
-                return new ResultMessageResponse
-                {
-                    Status = true,
-                    Message = $"Task Completed successfully !"
-                };
-            }
-            catch (Exception ex)
-            {
-                return new ResultMessageResponse
-                {
-                    Status = false,
-                    Message = $"Server Error. Please Try Again !"
-                };
-            }
-        }
-        public async Task<ResultMessageResponse> TerminateTask(TaskStatusRequest req)
-        {
-            try
-            {
-                var isActive = await isUserActive(req.leaderId);
-                if (isActive == null)
-                {
-                    return new ResultMessageResponse
-                    {
-                        Status = false,
-                        Message = $"This user are inactive !"
-                    };
-                }
-
-                var task = await _context.Tasks
-                    .Where(x => x.Id == req.taskId
+                    && x.GroupId == req.groupId
                     && x.Status != "Done"
                     && !x.isDeleted)
                     .FirstOrDefaultAsync();
@@ -309,8 +283,55 @@ namespace collentra_be.Services
                     };
                 }
 
-                task.isDeleted = true;
-                task.CompletedAt = DateTime.Now;
+                var isMember = await findUser(task.GroupId, req.leaderId);
+                if (isMember == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"You are not member on this group!"
+                    };
+                }
+
+                if (req.statusTask == "In Review")
+                {
+                    task.Status = "InReview";
+                }
+                else if (req.statusTask == "In Progress")
+                {
+                    task.Status = "InProgress";
+                }
+                else
+                {
+                    var checkAdmin = await checkAdminRole(task.GroupId, req.leaderId);
+                    if (checkAdmin == null)
+                    {
+                        return new ResultMessageResponse
+                        {
+                            Status = false,
+                            Message = $"You are not admin on this group!"
+                        };
+                    }
+
+                    if (req.statusTask == "Done")
+                    {
+                        task.Status = "Done";
+                        task.CompletedAt = DateTime.Now;
+                    }
+                    else if (req.statusTask == "Terminate")
+                    {
+                        task.isDeleted = true;
+                    }
+                    else
+                    {
+                        return new ResultMessageResponse
+                        {
+                            Status = false,
+                            Message = $"Cant do this right now!"
+                        };
+                    }
+                }
+
                 task.UpdatedBy = req.leaderId;
                 task.UpdatedAt = DateTime.Now;
 
@@ -319,7 +340,7 @@ namespace collentra_be.Services
                 return new ResultMessageResponse
                 {
                     Status = true,
-                    Message = $"Task Terminated successfully !"
+                    Message = $"Task {task.Title} status changed into {req.statusTask}!"
                 };
             }
             catch (Exception ex)
@@ -380,16 +401,6 @@ namespace collentra_be.Services
                         Message = $"This person is not member on this group !"
                     };
                 }
-                
-                var checkAdmin = await findUser(req.GroupId, userId);
-                if (checkAdmin == null)
-                {
-                    return new ResultMessageResponse
-                    {
-                        Status = false,
-                        Message = $"You are not member on this group !"
-                    };
-                }
 
                 var isAdmin = await checkAdminRole(req.GroupId, userId);
                 if (isAdmin == null)
@@ -428,7 +439,6 @@ namespace collentra_be.Services
 
                 checkTask.Title = req.Title;
                 checkTask.Description = req.Description;
-                checkTask.Status = req.Status;
                 checkTask.Priority = req.Priority;
                 checkTask.DueDate = req.DueDate;
                 checkTask.UpdatedBy = userId;

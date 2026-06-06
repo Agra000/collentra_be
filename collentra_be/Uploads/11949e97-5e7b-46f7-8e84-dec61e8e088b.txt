@@ -1,0 +1,31 @@
+Methodology :
+
+Smart Contract :
+kami menggunakan smartcontract dengan metode escrow untuk melakukan rekber, sebelum memulai alurnya smart contract untuk pembayaran ini akan kami buatkan state machine, state tersebut antara lain ada pending, OnDelivery, Completed, dan Canceled. 
+
+function yang dimiliki untuk ini ada :
+- pay() : function untuk menahan dana dari buyer ke petani.
+
+- Order() : menyimpan data pesanan si buyer ketika buyer melakukan pesanan dan pembayaran. ketika buyer melakukan pembayaran dana tersebut akan ditampung pada function pay(), setelah itu function order ini akan langsung set statenya menjadi pending.
+
+- startDelivery() : ditrigger oleh petani Ketika dia selesai melakukan packging dan pengiriman lewat kurir external, barulah validasi smartcontract akan membaca kalua petani dan kurir sudah menyiapkan barang yang akan dibawa menuju lokasi buyer dan state/status pun berubah menjadi onDelivery.
+
+- confirmDelivery() : function ini akan dapat ke trigger Ketika si kurir sudah sampai ke lokasi buyer dan buyer Sudah mengonfirmasi productnya, barulah smartcontract melakukan validasi dan jika sudah aman, maka state akan berubah menjadi complet dan dana yang tadinya di simpan di function pay() akan diberikan ke petani.
+
+- cancelOrder() : function tersebut akan ke trigger Ketika si buyer ingin melakukan pembatalan pada pesanan yang sebelumnya sudah di bayar, tapi prosesnya ga simple, buyer hanya bisa melakukan cancel ketika status masih pending saja, selain itu tidak akan bisa. jadi jika state/status != pending function ini akan menolak.
+
+-refund() : dapat ditrigger ketika si buyer melakukan refund atau tidak puas dengan barangnya. namun proses ini cukup rumit karena mengharuskan buyer melakukan delivery barang tersebut kembali ke petani. setelah di konfirmasi oleh buyer dan kurir untuk dikembalikan, barulah uang si buyer tersebut akan kembali ke dompetnya dan petani mendapat kembali barangnya ?
+
+
+berikut adalah alurnya
+- Ketika buyer melakukan pembelian di aplikasi, dana yang diberikan oleh si buyer tidak langsung diberikan ke petani, tetapi harus di tahan dulu di dalam smart contractnya sebut saja function order(), saat itulah state/status pada function order() tersebut berubah menjadi pending.
+- nah function order() dapat juga menampilkan barang pesanan si buyer, makanya function order() akan mengirim list pesanan tersebut ke hp si petani lewat aplikasi. kondisi order disini masih pending().
+- selanjutnya petani akan menyiapkan list barang yang di pesan oleh customer lalu melakukan pengiriman ke lokasi si buyer, pada saat ini function order() akan berubah menjadi OnDelivery.
+- setelah kurir sampai ke lokasi buyer, buyer dapat langsung mengonfirmasi pesanan. function order() akan dapat langsung memverifikasi hal tersebut dan langsung mengubah state atau status di order() menjadi Completed.
+- di sisi lain kondisi canceled hanya dapat terjadi ketika buyer membatalkan pesanan sebelum terjadi pengiriman, smartcontractnya akan langsung melakukan validasi dulu apakah order ini sudah onDelivery atau belum ?
+
+
+======
+Oracle Implementation and Visualization :
+
+

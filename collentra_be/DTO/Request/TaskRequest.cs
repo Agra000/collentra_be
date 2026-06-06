@@ -8,7 +8,7 @@ namespace collentra_be.DTO.Request
         public string Title { get; set; }
         public string Description { get; set; }
         public Guid AssigneeId { get; set; }
-        public string Status { get; set; }
+        public string? Status { get; set; }
         public string Priority { get; set; }
         public DateTime DueDate { get; set; }
         public DateTime? CompletedAt { get; set; }

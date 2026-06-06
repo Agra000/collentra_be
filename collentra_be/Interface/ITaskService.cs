@@ -10,8 +10,7 @@ namespace collentra_be.Interface
         Task<List<GetTaskDeadlineResponse>> getTaskDeadline(Guid asigneeId);
         Task<GetHomeResponse> getHomeInformation(Guid userId);
         Task<ResultMessageResponse> AddNewTask(Guid userId, TaskRequest req);
-        Task<ResultMessageResponse> CompleteTask(TaskStatusRequest req);
-        Task<ResultMessageResponse> TerminateTask(TaskStatusRequest req);
+        Task<ResultMessageResponse> ChangeTaskStatus(TaskStatusRequest req);
         Task<GetEditTasksResponse?> GetEditTask(Guid taskId);
         Task<ResultMessageResponse> EditTask(Guid userId, Guid taskId, TaskRequest req);
     }
