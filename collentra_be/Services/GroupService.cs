@@ -74,6 +74,16 @@ namespace collentra_be.Services
             return true;
         }
 
+        private async Task<GroupMemberModel?> findGroupMembers(Guid groupId, Guid userId)
+        {
+            return await _context.GroupMembers
+                    .Where(x => x.GroupId == groupId
+                    && x.UserId == userId
+                    && x.Role == "Member"
+                    && x.isLeaving == false)
+                    .FirstOrDefaultAsync();
+        }
+
         public async Task<List<GetAllGroupResponse>> GetAllGroup(Guid userId )
         {
             try
@@ -132,7 +142,9 @@ namespace collentra_be.Services
                             totalTasks = _context.Tasks.Count(t => t.GroupId == groupId
                                             && t.AssigneeId == gm.UserId
                                             && !t.isDeleted)
-                        }).ToList(),
+                        })
+                        .OrderByDescending(gm => gm.role == "Admin")
+                        .ToList(),
 
                     tasks = _context.Tasks
                         .Where(t => t.GroupId == groupId)
@@ -281,13 +293,7 @@ namespace collentra_be.Services
                     };
                 }
 
-                var isMemberInGroup = await _context.GroupMembers
-                                    .Where(x => x.GroupId == groupId
-                                    && x.UserId == user.user_id
-                                    && x.Role == "Member"
-                                    && x.isLeaving == false)
-                                    .FirstOrDefaultAsync();
-
+                var isMemberInGroup = await findGroupMembers(groupId, user.user_id);
                 if (isMemberInGroup == null)
                 {
                     return new ResultMessageResponse
@@ -301,7 +307,7 @@ namespace collentra_be.Services
                 {
                     GroupId = group.Id,
                     Title = "You Got Kicked !",
-                    Description = $"You have been kicked from group {group.Name} !",
+                    Description = $"You has been removed from the group {group.Name} !",
                     TargetId = Guid.Parse(req.kickedMemberId),
                     isOpen = false,
                     CreatedBy = req.leaderId,
@@ -490,13 +496,7 @@ namespace collentra_be.Services
                     };
                 }
 
-                var isMemberInGroup = await _context.GroupMembers
-                                    .Where(x => x.GroupId == group.Id
-                                    && x.UserId == user.user_id
-                                    && x.Role == "Member"
-                                    && x.isLeaving == false)
-                                    .FirstOrDefaultAsync();
-
+                var isMemberInGroup = await findGroupMembers(group.Id, user.user_id);
                 if (isMemberInGroup == null)
                 {
                     return new ResultMessageResponse
@@ -509,8 +509,8 @@ namespace collentra_be.Services
                 var notifToMember = new NotificationModel
                 {
                     GroupId = group.Id,
-                    Title = "You Got Promote to Admin !",
-                    Description = $"You have been promoted on group {group.Name} !",
+                    Title = "You've Been Promoted to Admin!",
+                    Description = $"You have been promoted to Admin in the group {group.Name}!",
                     TargetId = Guid.Parse(req.kickedMemberId),
                     isOpen = false,
                     CreatedBy = req.leaderId,
@@ -522,6 +522,9 @@ namespace collentra_be.Services
                 isMemberInGroup.Role = "Admin";
                 group.OwnerId = Guid.Parse(req.kickedMemberId);
                 isAdmin.Role = "Member";
+
+                isAdmin.UpdatedBy = req.leaderId;
+                isAdmin.UpdatedAt = DateTime.Now;
                 isMemberInGroup.UpdatedBy = req.leaderId;
                 isMemberInGroup.UpdatedAt = DateTime.Now;
 
@@ -531,6 +534,100 @@ namespace collentra_be.Services
                 {
                     Status = true,
                     Message = $"{user.email} Promote Successfully!"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResultMessageResponse
+                {
+                    Status = false,
+                    Message = $"Server Error. Please Try Again !"
+                };
+            }
+        }
+
+        public async Task<ResultMessageResponse> LeaveGroup(Guid groupId, KickMemberRequest req)
+        {
+            try
+            {
+                var group = await getGroupById(groupId);
+                if (group == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "Group Not Found !!"
+                    };
+                }
+
+                var user = await checkUserId(req.kickedMemberId);
+                if (user == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "User Not Found !!"
+                    };
+                }
+
+                var isMemberInGroup = await _context.GroupMembers
+                    .Where(x => x.GroupId == group.Id
+                    && x.UserId == user.user_id
+                    && x.isLeaving == false)
+                    .FirstOrDefaultAsync();
+                if (isMemberInGroup == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = "This person are not member on this group !!"
+                    };
+                }
+
+                var isAdmin = await checkAdminRole(group.Id, user.user_id);
+                if (isAdmin != null)
+                {
+                    var findNewAdmin = await _context.GroupMembers
+                        .Where(x => x.GroupId == group.Id
+                        && !x.isLeaving
+                        && x.Role == "Member" 
+                        && x.JoinedAt != null)
+                        .OrderBy(x => x.JoinedAt)
+                        .FirstOrDefaultAsync();
+
+                    if (findNewAdmin != null)
+                    {
+                        findNewAdmin.Role = "Admin";
+                        isAdmin.Role = "Member";
+                        group.OwnerId = findNewAdmin.UserId;
+
+                        findNewAdmin.UpdatedBy = isAdmin.UserId;
+                        findNewAdmin.UpdatedAt = DateTime.Now;
+                    }
+                }
+
+                isMemberInGroup.isLeaving = true;
+                isMemberInGroup.UpdatedBy = isMemberInGroup.UserId;
+                isMemberInGroup.UpdatedAt = DateTime.Now;
+
+                var notifToMember = new NotificationModel
+                {
+                    GroupId = group.Id,
+                    Title = $"Member Left the Group!",
+                    Description = $"{user.username} has left the group {group.Name}!",
+                    TargetId = group.OwnerId,
+                    isOpen = false,
+                    CreatedBy = user.user_id,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Notifications.Add(notifToMember);
+                await _context.SaveChangesAsync();
+
+                return new ResultMessageResponse
+                {
+                    Status = true,
+                    Message = $"{user.email} successfully left the group!"
                 };
             }
             catch (Exception ex)

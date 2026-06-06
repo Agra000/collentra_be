@@ -170,5 +170,27 @@ namespace collentra_be.Controllers
             }
         }
 
+        [HttpPost("leave-group/{groupId}")]
+        public async Task<IActionResult> LeaveGroup(Guid groupId, [FromBody] KickMemberRequest req)
+        {
+            var res = await _groupService.LeaveGroup(groupId, req);
+
+            if (!res.Status)
+            {
+                return BadRequest(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+            else
+            {
+                return Ok(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+        }
     }
 }
