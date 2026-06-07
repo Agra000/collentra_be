@@ -75,6 +75,7 @@ namespace collentra_be.Services
                         email = x.email,
                         username = x.username,
                         dob = x.dob,
+                        bio = x.bio,
                         CreatedAt = x.CreatedAt
                     })
                     .FirstOrDefaultAsync();
@@ -254,7 +255,40 @@ namespace collentra_be.Services
                 return new ResultMessageResponse
                 {
                     Status = false,
-                    Message = $"Server Error. Please Try Again {ex} !"
+                    Message = $"Server Error. Please Try Again !"
+                };
+            }
+        }
+
+        public async Task<ResultMessageResponse> UpdateUser(UpdateUserRequest req)
+        {
+            try
+            {
+                var isActive = await isUserActive(req.userId);
+                if (isActive == null)
+                {
+                    return new ResultMessageResponse
+                    {
+                        Status = false,
+                        Message = $"User not found!"
+                    };
+                }
+
+                isActive.bio = req.bio;
+                await _context.SaveChangesAsync();
+
+                return new ResultMessageResponse
+                {
+                    Status = true,
+                    Message = $"Successfully update users!"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ResultMessageResponse
+                {
+                    Status = false,
+                    Message = $"Server Error. Please Try Again!"
                 };
             }
         }

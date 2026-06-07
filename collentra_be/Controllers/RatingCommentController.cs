@@ -108,5 +108,29 @@ namespace collentra_be.Controllers
                 });
             }
         }
+
+
+        [HttpPost("update-user")]
+        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest req)
+        {
+            var res = await _IRateCommentService.UpdateUser(req);
+
+            if (!res.Status)
+            {
+                return BadRequest(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+            else
+            {
+                return Ok(new
+                {
+                    status = res.Status,
+                    message = res.Message
+                });
+            }
+        }
     }
 }

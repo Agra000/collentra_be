@@ -104,9 +104,31 @@ namespace collentra_be.Services
                     && !x.isDeleted)
                     .CountAsync();
 
+                var wiw = await _context.Tasks
+                    .Where(x => x.AssigneeId == userId
+                    && x.Status != "Done"
+                    && !x.isDeleted
+                    && _context.GroupMembers
+                        .Where(m => m.UserId == userId && !m.isLeaving)
+                        .Select(m => m.GroupId)
+                        .Contains(x.GroupId))
+                    .ToListAsync();
+
                 var taskRemaining = await _context.Tasks
                     .Where(x => x.AssigneeId == userId
                     && x.Status != "Done"
+                    && x.DueDate.Date >= DateTime.Now.Date
+                    && !x.isDeleted
+                    && _context.GroupMembers
+                        .Where(m => m.UserId == userId && !m.isLeaving)
+                        .Select(m => m.GroupId)
+                        .Contains(x.GroupId))
+                    .CountAsync();
+
+                var taskOverdue = await _context.Tasks
+                    .Where(x => x.AssigneeId == userId
+                    && x.Status != "Done"
+                    && x.DueDate.Date < DateTime.Now.Date
                     && !x.isDeleted
                     && _context.GroupMembers
                         .Where(m => m.UserId == userId && !m.isLeaving)
@@ -120,6 +142,7 @@ namespace collentra_be.Services
                     groupCount = groupCount,
                     taskCompleted = taskCompleted,
                     taskRemaining = taskRemaining,
+                    taskOverdue = taskOverdue,
                     teamPerformance = 0,
                     memberSince = checkUser.CreatedAt,
                     dob = checkUser.dob,

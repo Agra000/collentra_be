@@ -16,6 +16,7 @@ namespace collentra_be.Model
         public string password { get; set; }
         public char gender { get; set; }
         public DateTime dob { get; set; }
+        public string? bio { get; set; }
 
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

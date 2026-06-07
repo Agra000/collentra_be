@@ -12,5 +12,6 @@ namespace collentra_be.Interface
         Task<GetRatingResponse?> GetRating(Guid userId);
         Task<List<GetRatingResponse>?> GetRateAndComment(Guid userId);
         Task<ResultMessageResponse> RateAndCommentPerson(Guid userId, RateCommentPersonRequest req);
+        Task<ResultMessageResponse> UpdateUser(UpdateUserRequest req);
     }
 }

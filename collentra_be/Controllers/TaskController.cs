@@ -55,6 +55,7 @@ namespace collentra_be.Controllers
                     status = res.status,
                     groupCount = res.groupCount,
                     taskRemaining = res.taskRemaining,
+                    taskOverdue = res.taskOverdue,
                     taskCompleted = res.taskCompleted,
                     teamPerformance = res.teamPerformance,
                     memberSince = res.memberSince,
