@@ -242,6 +242,18 @@ namespace collentra_be.Services
                     checkRate.UpdatedAt = DateTime.Now;
                 }
 
+                var notifToMember = new NotificationModel
+                {
+                    GroupId = group.Id,
+                    Title = "You got new rating !",
+                    Description = $"You has been rated from {user.username} !",
+                    TargetId = req.TargetId,
+                    isOpen = false,
+                    CreatedBy = userId,
+                    CreatedAt = DateTime.Now
+                };
+                _context.Notifications.Add(notifToMember);
+
                 await _context.SaveChangesAsync();
 
                 return new ResultMessageResponse
