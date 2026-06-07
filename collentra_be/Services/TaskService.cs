@@ -104,16 +104,6 @@ namespace collentra_be.Services
                     && !x.isDeleted)
                     .CountAsync();
 
-                var wiw = await _context.Tasks
-                    .Where(x => x.AssigneeId == userId
-                    && x.Status != "Done"
-                    && !x.isDeleted
-                    && _context.GroupMembers
-                        .Where(m => m.UserId == userId && !m.isLeaving)
-                        .Select(m => m.GroupId)
-                        .Contains(x.GroupId))
-                    .ToListAsync();
-
                 var taskRemaining = await _context.Tasks
                     .Where(x => x.AssigneeId == userId
                     && x.Status != "Done"
