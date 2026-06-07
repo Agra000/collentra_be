@@ -18,6 +18,40 @@ namespace collentra_be.Controllers
             _IRateCommentService = rateCommentService;
         }
 
+        [HttpGet("get-all-user")]
+        public async Task<IActionResult> GetAllUser([FromQuery] Guid userId)
+        {
+            var res = await _IRateCommentService.GetAllUser(userId);
+
+            if (res == null || !res.Any())
+            {
+                return Ok(new { data = new List<object>(), message = "User not found" });
+            }
+
+            return Ok(new
+            {
+                data = res,
+                message = "Success"
+            });
+        }
+
+        [HttpGet("getUserById")]
+        public async Task<IActionResult> getUserById([FromQuery] Guid userId)
+        {
+            var res = await _IRateCommentService.getUserById(userId);
+
+            if (res == null)
+            {
+                return Ok(new { data = new List<object>(), message = "User not found!" });
+            }
+
+            return Ok(new
+            {
+                data = res,
+                message = "Success"
+            });
+        }
+
         [HttpGet("get-rating")]
         public async Task<IActionResult> GetRating([FromQuery] Guid userId)
         {

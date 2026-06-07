@@ -3,6 +3,7 @@
     public class GetRatingResponse
     {
         public Guid? ratingId { get; set; }
+        public string groupName { get; set; }
         public string? raterName { get; set; }
         public string? raterEmail { get; set; }
         public double Rating { get; set; }

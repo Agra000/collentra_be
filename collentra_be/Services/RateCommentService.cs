@@ -33,6 +33,47 @@ namespace collentra_be.Services
                 .FirstOrDefaultAsync();
         }
 
+        public async Task<List<PeopleDirectoryResponse>> GetAllUser(Guid userId)
+        {
+            return await _context.Users
+                    .Where(x => x.isActive && x.user_id != userId)
+                    .Select(x => new PeopleDirectoryResponse
+                    {
+                        id = x.user_id,
+                        name = x.username,
+                        emailMember = x.email,
+                        groupsJoined = _context.GroupMembers
+                                .Count(g => g.UserId == x.user_id && !g.isLeaving),
+
+                        rating = Math.Round(
+                                _context.RatingComments
+                                    .Where(r => r.TargetId == x.user_id && !r.IsDeleted)
+                                    .Select(r => (double?)r.Rate)
+                                    .Average() ?? 0.0, 
+                                1
+                            )
+                    })
+                    .ToListAsync();
+        }
+
+        public async Task<UserModel?> getUserById(Guid userId)
+        {
+            try
+            {
+                var isActive = await isUserActive(userId);
+                if (isActive == null)
+                {
+                    return new UserModel();
+                }
+
+                return isActive;
+            }
+            catch (Exception ex)
+            {
+                return new UserModel();
+            }
+        }
+
         public async Task<GetRatingResponse?> GetRating(Guid userId)
         {
             try
@@ -76,6 +117,7 @@ namespace collentra_be.Services
                         ratingId = x.Id,
                         Rating = x.Rate,
                         Comment = x.Comment,
+                        groupName = x.Group.Name,
                         raterName = x.Rater.username,
                         raterEmail = x.Rater.email,
                         TimeRated = x.UpdatedAt == null ? x.CreatedAt : x.UpdatedAt
