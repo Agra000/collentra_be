@@ -66,7 +66,18 @@ namespace collentra_be.Services
                     return new UserModel();
                 }
 
-                return isActive;
+                return await _context.Users
+                    .Where(x => x.user_id == userId
+                    && x.isActive)
+                    .Select(x => new UserModel
+                    {
+                        user_id = x.user_id,
+                        email = x.email,
+                        username = x.username,
+                        dob = x.dob,
+                        CreatedAt = x.CreatedAt
+                    })
+                    .FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {

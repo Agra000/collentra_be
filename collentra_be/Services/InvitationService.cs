@@ -64,26 +64,34 @@ namespace collentra_be.Services
                         .FirstOrDefaultAsync();
         }
 
-        public async Task<List<UserModel>> SearchUsers(string email)
+        public async Task<List<SearchUserInviteResponse>> SearchUsers(string email)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(email) || email.Length < 2)
-                    return new List<UserModel>();
+                    return new List<SearchUserInviteResponse>();
 
                 return await _context.Users
-                    .Where(u => u.email.Contains(email))
-                    .Take(10)
-                    .Select(u => new UserModel
+                    .Where(u => u.email.StartsWith(email))
+                    .Take(5)
+                    .Select(u => new SearchUserInviteResponse
                     {
-                        user_id = u.user_id,
+                        userId = u.user_id,
+                        username = u.username,
+                        rating = Math.Round(
+                                _context.RatingComments
+                                    .Where(r => r.TargetId == u.user_id && !r.IsDeleted)
+                                    .Select(r => (double?)r.Rate)
+                                    .Average() ?? 0.0,
+                                1
+                            ),
                         email = u.email
                     })
                     .ToListAsync();
             }
             catch (Exception ex) 
             {
-                return new List<UserModel>();
+                return new List<SearchUserInviteResponse>();
             }
         }
 

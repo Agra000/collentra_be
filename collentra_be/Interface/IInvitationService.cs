@@ -6,7 +6,7 @@ namespace collentra_be.Interface
 {
     public interface IInvitationService
     {
-        Task<List<UserModel>> SearchUsers(string email);
+        Task<List<SearchUserInviteResponse>> SearchUsers(string email);
         Task<List<object>> GetAllInvitation(Guid userId);
         Task<ResultMessageResponse> SendInvitationAsync(Guid projectId, Guid invitedByUserId, string targetEmailUser);
         Task<ResultMessageResponse> InviterTargetResponse(AcceptInvitiationRequest req);
