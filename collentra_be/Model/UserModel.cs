@@ -17,6 +17,7 @@ namespace collentra_be.Model
         public char gender { get; set; }
         public DateTime dob { get; set; }
         public string? bio { get; set; }
+        public bool showComment { get; set; }
 
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }

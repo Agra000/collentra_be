@@ -76,6 +76,7 @@ namespace collentra_be.Services
                         username = x.username,
                         dob = x.dob,
                         bio = x.bio,
+                        showComment = x.showComment,
                         CreatedAt = x.CreatedAt
                     })
                     .FirstOrDefaultAsync();
@@ -276,6 +277,7 @@ namespace collentra_be.Services
         {
             try
             {
+                var msg = "";
                 var isActive = await isUserActive(req.userId);
                 if (isActive == null)
                 {
@@ -285,14 +287,23 @@ namespace collentra_be.Services
                         Message = $"User not found!"
                     };
                 }
+ 
+                if (req.showComment != null)
+                {
+                    isActive.showComment = req.showComment == 0 ? false : true;
+                    msg = "Successfully Update Setting!";
+                } 
+                else
+                {
+                    isActive.bio = req.bio;
+                    msg = "Successfully update users!";
+                }
 
-                isActive.bio = req.bio;
                 await _context.SaveChangesAsync();
-
                 return new ResultMessageResponse
                 {
                     Status = true,
-                    Message = $"Successfully update users!"
+                    Message = msg
                 };
             }
             catch (Exception ex)

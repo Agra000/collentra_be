@@ -117,6 +117,7 @@ namespace collentra_be.Services
                     password = BCrypt.Net.BCrypt.HashPassword(r.password),
                     gender = r.gender,
                     dob = r.dob,
+                    showComment = true,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };
